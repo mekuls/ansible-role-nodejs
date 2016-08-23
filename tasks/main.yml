@@ -1,0 +1,3 @@
+---
+- name: creating a file
+  file: path={{filepath}} owner=root group=root mode=0644
