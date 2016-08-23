@@ -1,3 +1,48 @@
 ---
-- name: creating a file
-  file: path={{filepath}} owner=root group=root mode=0644
+- name: nodejs | download bundle
+  get_url:
+    url: https://nodejs.org/dist/{{node_version}}/node-{{node_version}}-linux-x64.tar.gz
+    dest: /tmp/node-{{node_version}}-linux-x64.tar.gz
+
+- name: nodejs | extract bundle
+  unarchive:
+    src: /tmp/node-{{node_version}}-linux-x64.tar.gz
+    dest: /tmp
+    copy: no
+  register: extract_result
+
+- name: nodejs | copy bundle to /usr/local
+  shell: rsync -rcil /tmp/node-{{node_version}}-linux-x64/ /usr/local/nodejs
+  changed_when: "rsync_result.stdout != ''"
+  register: rsync_result
+  when: extract_result|changed
+  become: True
+
+- name: nodejs | create a symlink for node
+  file:
+    src: /usr/local/nodejs/bin/node
+    dest: /usr/bin/node
+    owner: root
+    group: root
+    state: link
+  become: True
+  when: rsync_result|changed
+
+- name: nodejs | create a symlink for npm
+  file:
+    src: /usr/local/nodejs/bin/npm
+    dest: /usr/bin/npm
+    owner: root
+    group: root
+    state: link
+  become: True
+  when: rsync_result|changed
+
+
+- shell: /usr/bin/node --version
+  register: var_node_version
+  changed_when: false
+
+- assert:
+    that:
+      - "'{{node_version}}' == var_node_version.stdout"

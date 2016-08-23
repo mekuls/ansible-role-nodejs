@@ -17,25 +17,23 @@ before_install:
   - 'sudo docker build --rm=true --file=tests/Dockerfile.${distribution}-${version} --tag=${distribution}-${version}:ansible tests'
 
 script:
-  - container_id=$(mktemp)
-    # Run container in detached state
-  - 'sudo docker run --detach --volume="${PWD}":/etc/ansible/roles/role_under_test:ro ${run_opts} ${distribution}-${version}:ansible "${init}" > "${container_id}"'
+  - 'sudo docker run --detach --volume="$PWD":/etc/ansible/roles/role_under_test:ro ubuntu-14.04:ansible /sbin/init'
 
-  # Ansible syntax check.
-  - 'sudo docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/test.yml --syntax-check'
-
-  # Test role.
-  - 'sudo docker exec --tty "$(cat ${container_id})" env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/test.yml'
-
-  # Test role idempotence.
+  - 'container_id=`docker ps -q`'
   - >
-    sudo docker exec "$(cat ${container_id})" ansible-playbook /etc/ansible/roles/role_under_test/tests/test.yml
-    | grep -q 'changed=0.*failed=0'
-    && (echo 'Idempotence test: pass' && exit 0)
-    || (echo 'Idempotence test: fail' && exit 1)
+    docker exec --tty "$container_id" env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/test.yml 
+    | grep -q 'ok=8.*changed=5.*failed=0'
+    && (echo 'execution test: pass' && exit 0)
+    || (echo 'execution test: fail' && exit 1)
 
-  # Clean up
-  - 'sudo docker stop "$(cat ${container_id})"'
+  - >
+    docker exec --tty "$container_id" env TERM=xterm ansible-playbook /etc/ansible/roles/role_under_test/tests/test.yml 
+    | grep -q '*changed=0.*failed=0'
+    && (echo 'idempotence test: pass' && exit 0)
+    || (echo 'idempotence test: fail' && exit 1)
+
+  - 'docker ps -aq | xargs docker kill'
+  - 'docker ps -aq | xargs docker rm'
 
 notifications:
   webhooks: https://galaxy.ansible.com/api/v1/notifications/

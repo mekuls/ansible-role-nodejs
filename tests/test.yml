@@ -2,7 +2,7 @@
 - hosts: all
 
   vars:
-    filepath: "/tmp/helloworld"
+    node_version: "v4.5.0"
 
   roles:
     - role_under_test
