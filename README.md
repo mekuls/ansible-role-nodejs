@@ -1,6 +1,4 @@
-![Build Status](https://travis-ci.org/mekuls/ansible-role-nodejs.svg?branch=master)
-
-# Ansible role for NodeJS
+## Ansible role for NodeJS   ![Build Status](https://travis-ci.org/mekuls/ansible-role-nodejs.svg?branch=master)
 
 Currently tested and working on 
 
